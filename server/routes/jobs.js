@@ -16,16 +16,20 @@ router.get('/', async (req, res) => {
 
 // Create a new job
 router.post('/', async (req, res) => {
-  const { name, description, config } = req.body;
-  if (!name) return res.status(400).json({ message: 'Job name is required' });
-
   try {
-    const job = new Job({
-      name,
-      description,
-      config, // <-- Save pipeline steps here
-      owner: req.user.id,
-    });
+    const job = new Job(req.body);
+
+    // Create webhook if repo configured
+    if (job.config.repo?.url) {
+      const gitService = getGitService(job);
+      const webhookUrl = `${process.env.APP_URL}/api/webhooks/${job._id}`;
+      job.webhookId = await gitService.createWebhook(
+        job._id,
+        job.config.repo.url,
+        webhookUrl
+      );
+    }
+
     await job.save();
     res.status(201).json(job);
   } catch (err) {

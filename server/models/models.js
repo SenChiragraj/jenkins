@@ -10,24 +10,24 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const jobSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    description: String,
-    config: {
-      type: Object,
-      default: {
-        steps: [],
-      },
-    },
-    owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
+const jobSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: String,
+  config: {
+    steps: [{ name: String, run: String }],
+    repo: {
+      url: String,
+      branch: { type: String, default: 'main' },
+      provider: { type: String, enum: ['github', 'gitlab', 'bitbucket'] },
+      secret: String, // Webhook secret
+      credentials: {
+        type: mongoose.Schema.Types.Mixed // { username, password } or { token }
+      }
+    }
   },
-  { timestamps: true }
-);
+  webhookId: String, // ID from Git provider
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+}, { timestamps: true });
 
 const buildSchema = new mongoose.Schema(
   {

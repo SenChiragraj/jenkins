@@ -50,6 +50,40 @@ export default function JobForm({ onSubmit, initialJob }) {
         placeholder="Description"
       />
 
+      <div>
+        <h3>Repository Configuration</h3>
+        <select
+          value={repo.provider}
+          onChange={(e) => setRepo({ ...repo, provider: e.target.value })}
+        >
+          <option value="">Select Provider</option>
+          <option value="github">GitHub</option>
+          <option value="gitlab">GitLab</option>
+          <option value="bitbucket">Bitbucket</option>
+        </select>
+
+        <input
+          placeholder="Repo URL"
+          value={repo.url}
+          onChange={(e) => setRepo({ ...repo, url: e.target.value })}
+        />
+
+        <input
+          placeholder="Branch"
+          value={repo.branch}
+          onChange={(e) => setRepo({ ...repo, branch: e.target.value })}
+        />
+
+        <input
+          placeholder="Access Token"
+          type="password"
+          value={repo.credentials?.token || ''}
+          onChange={(e) =>
+            setRepo({ ...repo, credentials: { token: e.target.value } })
+          }
+        />
+      </div>
+
       <label>Pipeline Steps:</label>
       <PipelineStepDropdown onSelect={handleAddStep} />
 

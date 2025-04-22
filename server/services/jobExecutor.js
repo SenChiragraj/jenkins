@@ -73,6 +73,34 @@ async function processQueue() {
   }
 }
 
+import simpleGit from 'simple-git';
+import fs from 'fs-extra';
+import path from 'path';
+
+async function prepareWorkspace(job, buildConfig) {
+  const workspace = path.join(process.cwd(), 'workspace', job._id.toString());
+  await fs.ensureDir(workspace);
+
+  const git = simpleGit(workspace);
+  const repoUrl = addCredentialsToUrl(job.config.repo.url, job.config.repo.credentials);
+
+  if (await fs.pathExists(path.join(workspace, '.git'))) {
+    await git.pull();
+  } else {
+    await git.clone(repoUrl, workspace);
+  }
+
+  await git.checkout(buildConfig.branch || job.config.repo.branch);
+  return workspace;
+}
+
+function addCredentialsToUrl(url, credentials) {
+  if (credentials.token) {
+    return url.replace('https://', `https://x-token-auth:${credentials.token}@`);
+  }
+  return url;
+}
+
 /**
  * Run a shell command and stream output via onLog callback
  * @param {string} cmd - Shell command to run
@@ -80,7 +108,12 @@ async function processQueue() {
  */
 function runShellCommand(cmd, onLog) {
   return new Promise((resolve, reject) => {
-    const shell = spawn(cmd, { shell: true });
+
+    const shell = spawn(cmd, {
+      shell: true,
+      cwd: cwd,
+      env: { ...process.env, PATH: process.env.PATH }
+    });
 
     shell.stdout.on('data', (data) => {
       onLog(data.toString());
@@ -100,3 +133,4 @@ function runShellCommand(cmd, onLog) {
     });
   });
 }
+
