@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { Job } from '../models/models.js';
 import { enqueueJob } from '../services/jobExecutor.js';
+import { getGitService } from '../services/gitService.js';
 
 const router = Router();
 
@@ -17,7 +18,8 @@ router.get('/', async (req, res) => {
 // Create a new job
 router.post('/', async (req, res) => {
   try {
-    const job = new Job(req.body);
+    const job = new Job({ ...req.body, owner: req.user.id });
+    // const job = new Job(req.body);
 
     // Create webhook if repo configured
     if (job.config.repo?.url) {
@@ -33,6 +35,9 @@ router.post('/', async (req, res) => {
     await job.save();
     res.status(201).json(job);
   } catch (err) {
+    console.log(err?.message);
+    console.log(err);
+
     res.status(500).json({ message: 'Server error' });
   }
 });

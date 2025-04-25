@@ -22,6 +22,14 @@ export default function JobForm({ onSubmit, initialJob }) {
     setSteps(steps.filter((s) => s.name !== stepName));
   };
 
+  // Initialize repo configuration state
+  const [repo, setRepo] = useState(() => ({
+    provider: initialJob?.config?.repo?.provider || '',
+    url: initialJob?.config?.repo?.url || '',
+    branch: initialJob?.config?.repo?.branch || 'main',
+    credentials: initialJob?.config?.repo?.credentials || { token: '' },
+  }));
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name) {
@@ -29,12 +37,24 @@ export default function JobForm({ onSubmit, initialJob }) {
       return;
     }
     setError('');
-    // Send steps as config.steps
-    onSubmit({ name, description, config: { steps } });
-    setName('');
-    setDescription('');
-    setSteps([]);
+
+    // Include repo config in submission
+    onSubmit({
+      name,
+      description,
+      config: {
+        steps,
+        repo: {
+          provider: repo.provider,
+          url: repo.url,
+          branch: repo.branch,
+          credentials: repo.credentials,
+        },
+      },
+    });
   };
+
+  // Rest of the component remains the same...
 
   return (
     <form onSubmit={handleSubmit}>
