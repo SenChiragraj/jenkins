@@ -22,6 +22,7 @@ export async function enqueueJob(job, onLog) {
 /**
  * Process jobs in the queue one by one
  */
+
 async function processQueue() {
   if (jobQueue.length === 0) {
     isRunning = false;
@@ -42,9 +43,11 @@ async function processQueue() {
     onLog(`Starting build for job: ${job.name}\n`);
 
     // Run each step sequentially
+
+    const workspace = await prepareWorkspace(job, job.config);
     for (const step of job.config.steps) {
       onLog(`\n> Step: ${step.name}\n`);
-      await runShellCommand(step.run, onLog);
+      await runShellCommand(step.run, onLog, workspace);
     }
 
     build.status = 'success';
@@ -53,6 +56,7 @@ async function processQueue() {
 
     onLog('\nBuild completed successfully.\n');
     resolve(build);
+    console.log(build.logs);
   } catch (error) {
     // On error, update build status and reject
     onLog(`\nBuild failed: ${error.message}\n`);
@@ -82,7 +86,10 @@ async function prepareWorkspace(job, buildConfig) {
   await fs.ensureDir(workspace);
 
   const git = simpleGit(workspace);
-  const repoUrl = addCredentialsToUrl(job.config.repo.url, job.config.repo.credentials);
+  const repoUrl = addCredentialsToUrl(
+    job.config.repo.url,
+    job.config.repo.credentials
+  );
 
   if (await fs.pathExists(path.join(workspace, '.git'))) {
     await git.pull();
@@ -96,7 +103,10 @@ async function prepareWorkspace(job, buildConfig) {
 
 function addCredentialsToUrl(url, credentials) {
   if (credentials.token) {
-    return url.replace('https://', `https://x-token-auth:${credentials.token}@`);
+    return url.replace(
+      'https://',
+      `https://x-token-auth:${credentials.token}@`
+    );
   }
   return url;
 }
@@ -106,20 +116,21 @@ function addCredentialsToUrl(url, credentials) {
  * @param {string} cmd - Shell command to run
  * @param {Function} onLog - Callback to send logs
  */
-function runShellCommand(cmd, onLog) {
+function runShellCommand(cmd, onLog, cwd = process.cwd()) {
   return new Promise((resolve, reject) => {
-
     const shell = spawn(cmd, {
       shell: true,
-      cwd: cwd,
-      env: { ...process.env, PATH: process.env.PATH }
+      cwd,
+      env: { ...process.env, PATH: process.env.PATH },
     });
 
     shell.stdout.on('data', (data) => {
+      // console.log('STDOUT:', data.toString()); // Debug
       onLog(data.toString());
     });
 
     shell.stderr.on('data', (data) => {
+      // console.log('STDERR:', data.toString()); // Debug
       onLog(data.toString());
     });
 
@@ -133,4 +144,3 @@ function runShellCommand(cmd, onLog) {
     });
   });
 }
-

@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "run": "node index.js",
-    "start": "nodemon index.js",
-    "dev": "nodemon index.js",
+    "start": "nodemon index.js --ignore workspace/",
+    "dev": "nodemon index.js --ignore workspace/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "module",

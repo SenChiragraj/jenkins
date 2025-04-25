@@ -6,6 +6,7 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState('');
   const [editJobId, setEditJobId] = useState(null);
+  const [triggerMessage, setTriggerMessage] = useState('');
 
   const token = localStorage.getItem('token');
   const api = axios.create({
@@ -62,10 +63,10 @@ export default function Dashboard() {
   const triggerJob = async (jobId) => {
     try {
       const res = await api.post(`/jobs/${jobId}/trigger`);
-      alert('Job triggered successfully');
+      setTriggerMessage('Job triggered successfully!' + res.data.logs);
       console.log(res.data.logs); // Optionally show logs or navigate to logs page
     } catch (err) {
-      alert('Failed to trigger job');
+      setError('Failed to trigger job');
     }
   };
 
@@ -93,7 +94,7 @@ export default function Dashboard() {
           </li>
         ))}
       </ul>
-
+      {triggerMessage}
       {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
