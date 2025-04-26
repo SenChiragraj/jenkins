@@ -10,6 +10,7 @@ let isRunning = false;
  * @param {Object} job - Mongoose Job document
  * @param {Function} onLog - callback to send logs in real-time
  */
+
 export async function enqueueJob(job, onLog) {
   return new Promise((resolve, reject) => {
     jobQueue.push({ job, onLog, resolve, reject });
@@ -32,21 +33,27 @@ async function processQueue() {
 
   const { job, onLog, resolve, reject } = jobQueue.shift();
 
+  // const PORT = await getAvailablePort(4000); // Implement this function
+
   try {
     const build = new Build({
       job: job._id,
       status: 'running',
       startedAt: new Date(),
+      // port: PORT // Store used port
     });
     await build.save();
 
-    onLog(`Starting build for job: ${job.name}\n`);
+    onLog(`Starting build for job: ${job.name}`);
+    console.log(job.name);
 
     // Run each step sequentially
 
     const workspace = await prepareWorkspace(job, job.config);
     for (const step of job.config.steps) {
       onLog(`\n> Step: ${step.name}\n`);
+      console.log(step.name);
+
       await runShellCommand(step.run, onLog, workspace);
     }
 
@@ -54,12 +61,12 @@ async function processQueue() {
     build.finishedAt = new Date();
     await build.save();
 
-    onLog('\nBuild completed successfully.\n');
+    onLog('\nBuild completed successfully.');
     resolve(build);
     console.log(build.logs);
   } catch (error) {
     // On error, update build status and reject
-    onLog(`\nBuild failed: ${error.message}\n`);
+    onLog(`\nBuild failed: ${error.message}`);
 
     // Save failure status to DB
     const build = await Build.findOne({ job: job._id, status: 'running' }).sort(
@@ -80,6 +87,8 @@ async function processQueue() {
 import simpleGit from 'simple-git';
 import fs from 'fs-extra';
 import path from 'path';
+import { log } from 'console';
+import { on } from 'events';
 
 async function prepareWorkspace(job, buildConfig) {
   const workspace = path.join(process.cwd(), 'workspace', job._id.toString());
@@ -117,21 +126,25 @@ function addCredentialsToUrl(url, credentials) {
  * @param {Function} onLog - Callback to send logs
  */
 function runShellCommand(cmd, onLog, cwd = process.cwd()) {
+  console.log(cmd);
+
   return new Promise((resolve, reject) => {
     const shell = spawn(cmd, {
       shell: true,
       cwd,
-      env: { ...process.env, PATH: process.env.PATH },
+      // env: { ...process.env, PATH: process.env.PATH },
     });
 
     shell.stdout.on('data', (data) => {
       // console.log('STDOUT:', data.toString()); // Debug
       onLog(data.toString());
+      console.log(data.toString());
     });
 
     shell.stderr.on('data', (data) => {
       // console.log('STDERR:', data.toString()); // Debug
       onLog(data.toString());
+      console.log(data.toString());
     });
 
     shell.on('error', (err) => {

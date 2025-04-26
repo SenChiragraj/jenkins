@@ -1,13 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PipelineStepDropdown from '../dropdowns/PipelineSteps';
 
 export default function JobForm({ onSubmit, initialJob }) {
-  const [name, setName] = useState(initialJob?.name || '');
-  const [description, setDescription] = useState(initialJob?.description || '');
-
-  // Manage steps as an array of objects, not JSON string
-  const [steps, setSteps] = useState(initialJob?.config?.steps || []);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [steps, setSteps] = useState([]);
   const [error, setError] = useState('');
+  const [repo, setRepo] = useState(() => ({
+    provider: initialJob?.config?.repo?.provider || '',
+    url: initialJob?.config?.repo?.url || '',
+    branch: initialJob?.config?.repo?.branch || 'main',
+    credentials: initialJob?.config?.repo?.credentials || { token: '' },
+  }));
+
+  // Update form fields when initialJob changes (for edit)
+  useEffect(() => {
+    if (initialJob) {
+      setName(initialJob.name || '');
+      setDescription(initialJob.description || '');
+      setSteps(initialJob.config?.steps || []);
+      setRepo({
+        provider: initialJob.config?.repo?.provider || '',
+        url: initialJob.config?.repo?.url || '',
+        branch: initialJob.config?.repo?.branch || 'main',
+        credentials: initialJob.config?.repo?.credentials || { token: '' },
+      });
+    } else {
+      // Clear form when no initialJob (create mode)
+      setName('');
+      setDescription('');
+      setSteps([]);
+      setRepo({
+        provider: '',
+        url: '',
+        branch: 'main',
+        credentials: { token: '' },
+      });
+    }
+  }, [initialJob]);
 
   // Called when dropdown selection changes
   const handleAddStep = (step) => {
@@ -23,12 +53,6 @@ export default function JobForm({ onSubmit, initialJob }) {
   };
 
   // Initialize repo configuration state
-  const [repo, setRepo] = useState(() => ({
-    provider: initialJob?.config?.repo?.provider || '',
-    url: initialJob?.config?.repo?.url || '',
-    branch: initialJob?.config?.repo?.branch || 'main',
-    credentials: initialJob?.config?.repo?.credentials || { token: '' },
-  }));
 
   const handleSubmit = (e) => {
     e.preventDefault();

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import JobForm from '../components/forms/JobForm';
+import BuildLogs from '../components/functions/BuildLogs.js';
 
 export default function Dashboard() {
   const [jobs, setJobs] = useState([]);
@@ -94,7 +95,7 @@ export default function Dashboard() {
           </li>
         ))}
       </ul>
-      {triggerMessage}
+      {triggerMessage && <BuildLogs logs={triggerMessage} />}
       {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
